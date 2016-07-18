@@ -110,10 +110,27 @@ class QueueReader(threading.Thread):
                 except Queue.Empty:
                     time.sleep(.05)
 
+def validator(func):
+    def _func(*args, **kargs):
+        if len(args[0]) == 0:
+            return 0.0
+        return func(*args, **kargs)
+    return _func
+
+@validator
+def minarg(seq):
+    return min(seq)
+
+@validator
+def maxarg(seq):
+    return max(seq)
+
+@validator
 def average(seq):
     avg = (float(sum(seq)) / len(seq))
     return avg
 
+@validator
 def standard_dev(seq):
     avg = average(seq)
     sdsq = sum([(i - avg) ** 2 for i in seq])
@@ -123,6 +140,7 @@ def standard_dev(seq):
         stdev = 0
     return stdev
 
+@validator
 def percentile(seq, percentile):
     i = int(len(seq) * (percentile / 100.0))
     seq.sort()
@@ -174,15 +192,15 @@ print "test finish: %s" % (datetime.fromtimestamp(test_end_timestamp).strftime("
 print "\n===All Transactions==="
 print "Response Time Summary (secs):"
 print "%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s" % ("count", "avg", "min", "50pct", "80pct", "90pct", "max", "stdev")
-print "%7d\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\n" % (len(all_run_time), average(all_run_time), min(all_run_time), percentile(all_run_time, 50),\
- percentile(all_run_time, 80), percentile(all_run_time, 90), max(all_run_time), standard_dev(all_run_time))
+print "%7d\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\n" % (len(all_run_time), average(all_run_time), minarg(all_run_time), percentile(all_run_time, 50),\
+ percentile(all_run_time, 80), percentile(all_run_time, 90), maxarg(all_run_time), standard_dev(all_run_time))
 
 print "Interval Details (secs):"
 print "%8s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s\t%7s" % ("interval", "count", "avg", "min", "50pct", "80pct", "90pct", "max", "stdev")
 for interval_num in range(interval):
     interval_list = interval_run_time[interval_num]
-    print "%8d\t%7d\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f" % (interval_num, len(interval_list), average(interval_list), min(interval_list), percentile(interval_list, 50),\
- percentile(interval_list, 80), percentile(interval_list, 90), max(interval_list), standard_dev(interval_list))
+    print "%8d\t%7d\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f" % (interval_num, len(interval_list), average(interval_list), minarg(interval_list), percentile(interval_list, 50),\
+ percentile(interval_list, 80), percentile(interval_list, 90), maxarg(interval_list), standard_dev(interval_list))
 
 print "\n===Agent Details==="
 print "Agent\tStarttime\tRequests\tErrors\tBytes received\tAvg Response Time(secs)\tAvg throughput(req/sec)"
