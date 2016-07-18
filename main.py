@@ -6,6 +6,8 @@ import Queue
 import urllib2
 from datetime import datetime
 
+UNION_START_TIME = 0
+
 class AgentGroup():
     def __init__(self, queue, num_threads, run_time, rampup):
         self.queue = queue
@@ -15,34 +17,36 @@ class AgentGroup():
         self.details = []
 
     def run(self):
-        self.start_time = time.time()
         threads = []
+
         for idx in range(self.num_threads):
+            agent = Agent(self.queue, idx, self.run_time)
+            agent.daemon = True
+            threads.append(agent)
+
+        global UNION_START_TIME
+        UNION_START_TIME = time.time()
+
+        for idx, agent in enumerate(threads):
             spacing = 1.0 * self.rampup / self.num_threads
             if idx > 0:
                 time.sleep(spacing)
-
-            agent = Agent(self.queue, idx, self.run_time, self.start_time)
-            agent.daemon = True
-            threads.append(agent)
             agent.start()
 
         for agent in threads:
             agent.join()
-            self.details.append("%5d\t%9.2f\t%8d\t%6d\t%14d\t%23.3f\t%23.3f" % (agent.thread_num, agent.real_start_time - self.start_time, agent.trans_count, agent.errors, agent.received_data, agent.avg_resp_time, agent.avg_throughput))
+            self.details.append("%5d\t%9.2f\t%8d\t%6d\t%14d\t%23.3f\t%23.3f" % (agent.thread_num, agent.real_start_time - UNION_START_TIME, agent.trans_count, agent.errors, agent.received_data, agent.avg_resp_time, agent.avg_throughput))
 
 class Agent(threading.Thread):
     """
         Every single thread to run the test code.
         Test stastics put into threads queue.
     """
-    def __init__(self, queue, thread_num, run_time, start_time):
+    def __init__(self, queue, thread_num, run_time):
         threading.Thread.__init__(self)
         self.queue = queue
         self.thread_num = thread_num
         self.run_time = run_time
-        self.start_time = start_time
-        self.real_start_time = time.time()
         self.trans_count = 0
         self.received_data = 0
         self.errors = 0
@@ -50,6 +54,7 @@ class Agent(threading.Thread):
         self.avg_throughput = 0
 
     def run(self):
+        self.real_start_time = time.time()
         elapsed_time = 0
         total_resp_time = 0
         while elapsed_time < self.run_time:
@@ -65,7 +70,7 @@ class Agent(threading.Thread):
                 error = str(e)
 
             run_time = time.time() - start
-            elapsed_time = time.time() - self.start_time
+            elapsed_time = time.time() - UNION_START_TIME
 
             self.trans_count += 1
             self.received_data += resp_data
