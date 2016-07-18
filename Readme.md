@@ -4,7 +4,7 @@ Web Performance Tests in Python.
 
 ##Usage
 
-~~~shell
+~~~
 usage: main.py [-h] [-a [A]] [-d [D]] [-i [I]] [-r [R]] -u U
 
 optional arguments:
