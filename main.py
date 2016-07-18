@@ -94,26 +94,23 @@ class QueueReader(threading.Thread):
         self.elapsed_time = 0.0
 
     def run(self):
-        with open("results.csv", "w") as f:
-            while True:
-                try:
-                    agent_num, elapsed_time, run_time, resp_data, error = self.queue.get(False)
-                    self.trans_count += 1
-                    if error != '':
-                        error = '\\n'.join(error.splitlines())
+        while True:
+            try:
+                agent_num, elapsed_time, run_time, resp_data, error = self.queue.get(False)
+                self.trans_count += 1
+                if error != '':
+                    error = '\\n'.join(error.splitlines())
 
-                        self.error_count += 1
-                    f.write('%d, %d, %0.3f, %f, %d, %s,\n' % (self.trans_count, agent_num, elapsed_time, run_time, resp_data, error))
-                    # print agent_num, self.trans_count, elapsed_time, run_time, resp_data, error
-                    if elapsed_time > self.elapsed_time:
-                        self.elapsed_time = elapsed_time
+                    self.error_count += 1
+                # print agent_num, self.trans_count, elapsed_time, run_time, resp_data, error
+                if elapsed_time > self.elapsed_time:
+                    self.elapsed_time = elapsed_time
 
-                    if elapsed_time < test_duration:
-                        # print int(elapsed_time / interval_time), elapsed_time, interval_time
-                        interval_run_time[int(elapsed_time / interval_time)].append(run_time)
-                    f.flush()
-                except Queue.Empty:
-                    time.sleep(.05)
+                if elapsed_time < test_duration:
+                    # print int(elapsed_time / interval_time), elapsed_time, interval_time
+                    interval_run_time[int(elapsed_time / interval_time)].append(run_time)
+            except Queue.Empty:
+                time.sleep(.05)
 
 def validator(func):
     def _func(*args, **kargs):
